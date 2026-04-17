@@ -1,0 +1,64 @@
+import streamlit as st
+import math
+import random
+
+# App-Design
+st.set_page_config(page_title="KombiTrainer Bayern", page_icon="??")
+
+# Didaktische Hintergrund-Logik
+def get_formula(typ):
+    formulas = {
+        "Variation (mit W.)": r"n^k",
+        "Variation (ohne W.)": r"\frac{n!}{(n-k)!}",
+        "Kombination (ohne W.)": r"\binom{n}{k}",
+        "Kombination (mit W.)": r"\binom{n+k-1}{k}"
+    }
+    return formulas.get(typ, "")
+
+def calculate(n, k, typ):
+    try:
+        if typ == "Variation (mit W.)": return n**k
+        if typ == "Variation (ohne W.)": return math.perm(n, k)
+        if typ == "Kombination (ohne W.)": return math.comb(n, k)
+        if typ == "Kombination (mit W.)": return math.comb(n + k - 1, k)
+    except: return "Zahl zu groß!"
+
+# Aufgaben-Datenbank
+if 'pool' not in st.session_state:
+    st.session_state.pool = [
+        {"q": "Ein bayerisches Autokennzeichen hat nach dem Ort 2 Buchstaben und 4 Ziffern. Wie viele Möglichkeiten gibt es für die 4 Ziffern (0-9), wenn Wiederholungen erlaubt sind?", "n": 10, "k": 4, "t": "Variation (mit W.)"},
+        {"q": "In einem Kurs mit 15 Schülern werden ein Kurssprecher und ein Stellvertreter gewählt. Wie viele Möglichkeiten gibt es?", "n": 15, "k": 2, "t": "Variation (ohne W.)"},
+        {"q": "Für ein Buffet werden aus 10 Sorten Käse genau 4 Sorten ausgewählt. Die Reihenfolge der Auswahl ist egal.", "n": 10, "k": 4, "t": "Kombination (ohne W.)"},
+        {"q": "Ein Kind kauft 5 Kugeln Eis an einem Stand mit 12 Sorten. Wie viele Kombinationen sind möglich? (Sorten dürfen mehrfach gewählt werden, Reihenfolge egal)", "n": 12, "k": 5, "t": "Kombination (mit W.)"}
+    ]
+    st.session_state.current = random.choice(st.session_state.pool)
+
+# UI-Elemente
+st.title("?? Kombinatorik-Trainer")
+st.subheader("Gymnasium Bayern | Vertiefung Stochastik")
+
+st.info(st.session_state.current["q"])
+
+answer = st.number_input("Dein Ergebnis:", value=0, step=1)
+
+col1, col2 = st.columns(2)
+if col1.button("? Prüfen"):
+    correct = calculate(st.session_state.current["n"], st.session_state.current["k"], st.session_state.current["t"])
+    if answer == correct:
+        st.success(f"Richtig! Lösung: {correct}")
+        st.balloons()
+    else:
+        st.error(f"Nicht ganz. Die richtige Lösung ist: {correct}")
+        st.write(f"**Hilfe:** Es ist eine **{st.session_state.current['t']}**.")
+        st.latex(get_formula(st.session_state.current['t']))
+
+if col2.button("?? Nächste Aufgabe"):
+    st.session_state.current = random.choice(st.session_state.pool)
+    st.rerun()
+
+st.sidebar.markdown("---")
+st.sidebar.write("### ?? Formel-Check")
+sn = st.sidebar.number_input("n wählen", 1, 100, 10)
+sk = st.sidebar.number_input("k wählen", 1, 100, 3)
+styp = st.sidebar.selectbox("Modell", ["Variation (mit W.)", "Variation (ohne W.)", "Kombination (ohne W.)", "Kombination (mit W.)"])
+st.sidebar.write(f"Ergebnis: {calculate(sn, sk, styp)}")
